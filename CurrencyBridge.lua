@@ -1,4 +1,4 @@
--- CurrencyBridge (ModuleScript) - place in the Tycoon folder
+-- CurrencyBridge (ModuleScript) - in the Tycoon folder
 local ServerStorage = game:GetService("ServerStorage")
 
 local CurrencyBridge = {}

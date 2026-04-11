@@ -1,4 +1,4 @@
---DataModule Tycoon as child of ServerMainScript
+--DataModuleTYCOONSCRIPT Tycoon as child of ServerMainScript
 -- Services
 local Players = game:GetService("Players")
 local ServerStorage = game:GetService("ServerStorage")
@@ -134,7 +134,7 @@ function module:LoadTycoon(tycoon)
 	local owner = Players:GetPlayerByUserId(tycoon.Tycoon:GetAttribute("OwnerId"))
 	if not owner then return end
 
-	local ownerFolder = ServerStorage.PlayerData:FindFirstChild(owner.UserId)
+	local ownerFolder = ServerStorage.PlayerData:FindFirstChild(tostring(owner.UserId))
 	if not ownerFolder then return end
 
 
@@ -157,8 +157,6 @@ function module:LoadTycoon(tycoon)
 		local object = tycoon.Objects[objectName]
 		if not object then continue end
 
-		-- Without this in place, some objects won't be added before the script
-		-- attempts to remove its button, which can cause logic errors
 		local success = false
 		tycoon.Tycoon.PurchasedObjects.ChildAdded:Once(function(obj)
 			success = true
@@ -214,7 +212,6 @@ function module:LoadTycoon(tycoon)
 			end
 
 			table.insert(purchasedButtons, button)
-
 			button:Destroy()
 		elseif configModule.RebirthsEnabled and button.Instance:GetAttribute("PostRebirthText") then
 			local rebirths = ownerFolder:GetAttribute(configModule.RebirthsName)

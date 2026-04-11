@@ -23,12 +23,12 @@ local function StringToTable(str : string)
 	return str and string.split(string.gsub(str, " ", ""), ",")
 end
 
--- Convert a list of object names to object Instances (search both Purchases and PurchasedObjects)
+-- Convert a list of object names to object Instances (search Purchases, PurchasedObjects, and Essentials)
 function Button:StringListToObjects(list : {string})
 	if not list then return {} end
 	local objects = {}
 	for _, name in ipairs(list) do
-		local object = self.Tycoon.Purchases:FindFirstChild(name) or self.Tycoon.PurchasedObjects:FindFirstChild(name)
+		local object = self.Tycoon.Purchases:FindFirstChild(name) or self.Tycoon.PurchasedObjects:FindFirstChild(name) or self.Tycoon.Essentials:FindFirstChild(name)
 		if not object and name ~= "" then
 			warn("Object '"..name.."' not found in tycoon '"..self.Tycoon.Name.."' for button '"..self.Instance.Name.."'")
 			continue

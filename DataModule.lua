@@ -12,6 +12,14 @@ local dataStore = DataStoreService:GetDataStore(configModule.DataStoreName)
 
 local module = {}
 
+local function findTycoonObject(tycoonModel: Instance, objectName: string)
+	if not tycoonModel or not objectName then return nil end
+	return (tycoonModel:FindFirstChild("Purchases") and tycoonModel.Purchases:FindFirstChild(objectName))
+		or (tycoonModel:FindFirstChild("PurchasedObjects") and tycoonModel.PurchasedObjects:FindFirstChild(objectName))
+		or (tycoonModel:FindFirstChild("Essentials") and tycoonModel.Essentials:FindFirstChild(objectName))
+end
+
+
 function module:SaveLeaderstats(userId)
 	if configModule.SaveLeaderstats ~= true then return end
 
@@ -173,7 +181,7 @@ function module:LoadTycoon(tycoon)
 	end
 
 	for _, objectName in ipairs(tycoonData[2]) do
-		local object = tycoon.Tycoon.PurchasedObjects:FindFirstChild(objectName)
+		local object = findTycoonObject(tycoon.Tycoon, objectName)
 		if not object then continue end
 		tycoon:HandleDependencies(object, tycoon.Dependencies.Removables, true)
 		object:Destroy()
@@ -182,7 +190,22 @@ function module:LoadTycoon(tycoon)
 	local purchasedButtons = {}
 	for _, button in ipairs(tycoon.Buttons) do
 		if button.Instance:HasTag("KeepOnRebirth") then
-			table.insert(tycoon.RebirthPersistentButtons, button)
+			local entry = {
+				ButtonName = button.Instance.Name,
+				PurchaseObjects = {},
+				RemoveObjects = {},
+			}
+			if button.PurchaseObjects then
+				for _, object in ipairs(button.PurchaseObjects) do
+					table.insert(entry.PurchaseObjects, object.Name)
+				end
+			end
+			if button.RemoveObjects then
+				for _, object in ipairs(button.RemoveObjects) do
+					table.insert(entry.RemoveObjects, object.Name)
+				end
+			end
+			table.insert(tycoon.RebirthPersistentButtons, entry)
 		end
 
 		local allObjectsPurchased = true

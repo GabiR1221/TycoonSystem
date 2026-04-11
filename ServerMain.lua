@@ -1,4 +1,4 @@
--- ServerMain. Serverscript in Tycoon folder in workspace
+-- ServerMain.TYCOONSCRIPT Serverscript in Tycoon folder in workspace
 -- Services
 local MarketplaceService = game:GetService("MarketplaceService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -33,6 +33,11 @@ local getAnimationsFunction = Instance.new("RemoteFunction")
 getAnimationsFunction.Name = "TycoonGetObjectAnimationsFunction"
 getAnimationsFunction.Parent = ReplicatedStorage
 
+local getRebirthRequirementsFunction = Instance.new("RemoteFunction")
+getRebirthRequirementsFunction.Name = "TycoonGetRebirthRequirementsFunction"
+getRebirthRequirementsFunction.Parent = ReplicatedStorage
+
+
 -- Modules
 local configModule = require(script.Parent.Settings)
 local dataModule = require(script.DataModule)
@@ -41,6 +46,51 @@ local tycoonModule = require(script.TycoonModule)
 -- Returns the ObjectAnimationsModule to the client
 getAnimationsFunction.OnServerInvoke = function()
 	return script.ObjectAnimationsModule
+end
+
+local function cloneArray(arrayValue)
+	local out = {}
+	if type(arrayValue) ~= "table" then return out end
+	for _, value in ipairs(arrayValue) do
+		table.insert(out, tostring(value))
+	end
+	return out
+end
+
+local function cloneDictionary(dictValue)
+	local out = {}
+	if type(dictValue) ~= "table" then return out end
+	for key, value in pairs(dictValue) do
+		out[tostring(key)] = tonumber(value) or 0
+	end
+	return out
+end
+
+getRebirthRequirementsFunction.OnServerInvoke = function(player)
+	local rebirthsName = configModule.RebirthsName or "Rebirths"
+	local rebirthCount = 0
+
+	local serverPlayerData = ServerStorage:FindFirstChild("PlayerData")
+	local playerFolder = serverPlayerData and serverPlayerData:FindFirstChild(tostring(player.UserId))
+	if playerFolder then
+		rebirthCount = tonumber(playerFolder:GetAttribute(rebirthsName)) or 0
+	end
+
+	local nextTier = rebirthCount + 1
+	local tierRequirements = nil
+	if type(configModule.RebirthRequirementsByTier) == "table" then
+		tierRequirements = configModule.RebirthRequirementsByTier[nextTier]
+	end
+	tierRequirements = tierRequirements or {}
+
+	return {
+		RebirthCount = rebirthCount,
+		NextTier = nextTier,
+		RebirthLimit = tonumber(configModule.RebirthLimit) or 0,
+		CompletionPercentage = tonumber(configModule.RebirthCompletionPercentage) or 100,
+		RequiredPets = cloneArray(tierRequirements.RequiredPets or configModule.RebirthRequiredPets or {}),
+		RequiredCurrency = cloneDictionary(tierRequirements.RequiredCurrency or configModule.RebirthRequiredCurrency or {}),
+	}
 end
 
 
@@ -153,8 +203,8 @@ local function OnPlayerRemoving(player)
 	elseif configModule.LoadStatsOnJoin == true then
 		dataModule:SaveLeaderstats(player.UserId)
 	end
-	
-	local playerFolder = playerData:FindFirstChild(player.UserId)
+
+	local playerFolder = playerData:FindFirstChild(tostring(player.UserId))
 	if playerFolder then
 		playerFolder:Destroy()
 	end
@@ -215,9 +265,9 @@ local function SaveAllData()
 			if configModule.LoadLeaderstatsOnJoin == true then
 				dataModule:SaveLeaderstats(player.UserId)
 			end
-			return
+			continue
 		end
-		
+
 		dataModule:SaveLeaderstats(player.UserId)
 		dataModule:SaveTycoon(tycoon)
 	end
